@@ -13,7 +13,63 @@ app.use(require('webpack-dev-middleware')(compiler, {
 
 app.use(require('webpack-hot-middleware')(compiler));
 
-app.get('*', (req, res) => {
+const mysql = require('mysql')
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
+  database: 'hosxp',
+  charset: 'tis620_thai_ci'
+})
+
+app.get('/api/:depId', (req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  if(!parseInt(req.params.depId)){
+    res.statusCode = 400;
+    res.json({error: `Cannot parse ${req.params.depId}`})
+    res.end()
+    return;
+  }
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error('error connecting: ' + err.stack);
+      res.statusCode = 500;
+      res.json({error: `Cannot ${req.method} ${req.url}`, stack: err})
+      res.end()
+      return
+    }
+    connection.query('SET NAMES UTF8')
+    connection.query(`SELECT kskdepartment.department as name, opduser.name as doctor_name, opduser.entryposition as doctor_position FROM kskdepartment LEFT JOIN opduser ON kskdepartment.doctor_code = opduser.doctorcode WHERE kskdepartment.depcode = ${parseInt(req.params.depId)}`, (err, department) => {
+      if (err) {
+        res.statusCode = 500;
+        res.json({error: `Cannot ${req.method} ${req.url}`, stack: err})
+        res.end()
+        return;
+      }
+      if(department.length){
+        connection.query(`SELECT ovst.oqueue as queue_number, CONCAT(patient.pname, patient.fname, ' ', patient.lname) as patient_name FROM ovst INNER JOIN patient ON ovst.hn = patient.hn WHERE ovst.cur_dep = ${parseInt(req.params.depId)} ORDER BY cur_dep_time DESC LIMIT 5`, (err, queue) => {
+          if (err) {
+            res.statusCode = 500;
+            res.json({error: `Cannot ${req.method} ${req.url}`, stack: err})
+            res.end()
+            return;
+          }
+          res.send({
+            department: department[0],
+            queue
+          })
+        })
+        connection.release()
+        return;
+      }
+      res.statusCode = 500;
+      res.json({error: `Department Id: ${req.params.depId} not found`})
+      connection.release()
+    })
+  })
+})
+
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
