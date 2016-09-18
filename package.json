@@ -46,6 +46,8 @@
   },
   "dependencies": {
     "axios": "^0.14.0",
+    "forever-monitor": "^1.7.0",
+    "minimist": "^1.2.0",
     "mysql": "^2.11.1",
     "prompt": "^1.0.0",
     "react": "^0.14.3",

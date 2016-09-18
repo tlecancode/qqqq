@@ -3,6 +3,7 @@ const express = require('express');
 const webpack = require('webpack');
 const config = require('./webpack.config.dev');
 
+const argv = require('minimist')(process.argv.slice(2));
 const app = express();
 const compiler = webpack(config);
 
@@ -15,11 +16,21 @@ app.use(require('webpack-hot-middleware')(compiler));
 
 const mysql = require('mysql')
 const pool = mysql.createPool({
-	host: 'localhost',
-	user: 'root',
-	password: 'root',
-	database: 'hosxp',
+	host: argv.h,
+	user: argv.u,
+	password: argv.p,
+	database: argv.d,
 	charset: 'tis620_thai_ci'
+})
+
+pool.getConnection((err, connection) => {
+	connection.query('SELECT * FROM kskdepartment', (err, result) => {
+		if (err) {
+			console.error('Error Connecting: ' + err.stack)
+			process.exit(1)
+		}
+	})
+	connection.release()
 })
 
 app.get('/api/:depId', (req, res) => {
@@ -81,3 +92,5 @@ app.listen(3000, 'localhost', (err) => {
 
 	console.log('Listening at http://localhost:3000');
 });
+
+
