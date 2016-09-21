@@ -10,7 +10,7 @@ prompt.get(['host', 'username', 'password', 'dbname'], function (err, result) {
 	});
 
 	child.on('exit', function () {
-		console.log('devServer.js has exited after 3 restarts');
+		console.log('server has exited after 3 restarts');
 	});
 
 	child.start()
