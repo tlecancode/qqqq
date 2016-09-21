@@ -24,6 +24,10 @@ const pool = mysql.createPool({
 })
 
 pool.getConnection((err, connection) => {
+	if (err) {
+		console.error('Error Connecting: ' + err.stack)
+		process.exit(1)
+	}
 	connection.query('SELECT * FROM kskdepartment', (err, result) => {
 		if (err) {
 			console.error('Error Connecting: ' + err.stack)
